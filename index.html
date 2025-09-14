@@ -108,14 +108,23 @@ body.light .short-replies button{background:#90e0ef;color:#111;}
     }
 
     .chat-item {
-        min-width: 120px; 
-        flex-shrink: 0;
+        min-width: 120px; /* sabit genişlik */
+        max-width: 120px; /* tüm kutular aynı genişlikte */
+        flex: 0 0 120px;  /* küçülmesini engelle */
         font-size: 12px;
         padding: 6px 8px;
         border-radius: 8px;
         display: flex;
         flex-direction: column;
         justify-content: center;
+        overflow: hidden; /* taşan içerik gizlensin */
+    }
+
+    .chat-item-title,
+    .chat-item-preview {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis; /* taşan yazıyı üç nokta yap */
     }
 
     .chat-main {
@@ -138,7 +147,6 @@ body.light .short-replies button{background:#90e0ef;color:#111;}
         box-sizing: border-box;
     }
 }
-
 
   
 </style>
@@ -347,6 +355,7 @@ document.addEventListener('contextmenu', function(e){
 </script>
 </body>
 </html>
+
 
 
 
