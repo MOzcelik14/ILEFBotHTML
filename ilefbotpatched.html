@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<link rel="icon" href="https://i.hizliresim.com/ar4mbl6.png" type="image/x-icon" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>İLEFBot</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+* {margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;}
+body {background: linear-gradient(135deg,#0f2027,#203a43,#2c5364);color:#fff;min-height:100vh;display:flex;justify-content:center;align-items:center;padding:20px;transition: background 0.3s, color 0.3s;}
+body.light {background: linear-gradient(135deg,#f0f0f0,#d0d0d0,#b0b0b0);color:#111;}
+.app-container {display:flex;width:95%;max-width:1400px;height:85vh;background: rgba(15,25,35,0.9);border-radius:15px;box-shadow:0 10px 30px rgba(0,0,0,0.5);overflow:hidden;backdrop-filter:blur(10px);border:1px solid rgba(100,200,255,0.2);transition: background 0.3s, color 0.3s;}
+body.light .app-container {background: rgba(255,255,255,0.9);color:#111;border:1px solid rgba(0,0,0,0.2);}
+.sidebar {width:280px;background:rgba(10,25,40,0.8);border-right:1px solid rgba(100,200,255,0.2);display:flex;flex-direction:column;transition: background 0.3s;}
+body.light .sidebar {background:rgba(240,240,240,0.9);border-right:1px solid rgba(0,0,0,0.2);}
+.sidebar-header {padding:20px;display:flex;align-items:center;border-bottom:1px solid rgba(100,200,255,0.2);}
+.sidebar-header img {width:120px;filter: brightness(0) invert(1);margin-right:10px;}
+body.light .sidebar-header img {filter: brightness(0);}
+.new-chat-btn {margin:15px;padding:12px;background: linear-gradient(135deg,#00b894,#0984e3);color:white;border:none;border-radius:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:500;transition: all 0.3s ease;}
+.new-chat-btn:hover {transform:translateY(-2px);box-shadow:0 6px 15px rgba(0,184,148,0.4);}
+.chat-history {flex:1;overflow-y:auto;padding:10px;}
+.chat-item {padding:12px 15px;margin-bottom:8px;border-radius:10px;cursor:pointer;transition: background 0.2s;}
+.chat-item:hover {background: rgba(100,200,255,0.1);}
+.chat-item.active {background: rgba(0,180,148,0.2);}
+.chat-item-title {font-weight:500;margin-bottom:5px;white-space: nowrap;overflow: hidden;text-overflow: ellipsis;}
+.chat-item-preview {font-size:12px;color: rgba(255,255,255,0.6);white-space: nowrap;overflow: hidden;text-overflow: ellipsis;}
+body.light .chat-item-preview {color: rgba(0,0,0,0.6);}
+.chat-main {flex:1;display:flex;flex-direction:column;}
+.chat-header {background: linear-gradient(90deg,#0a3d62,#079992);color:white;padding:15px 20px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(100,200,255,0.2);}
+body.light .chat-header {background: linear-gradient(90deg,#ccc,#eee);color:#111;border-bottom:1px solid rgba(0,0,0,0.2);}
+.chat-title {display:flex;align-items:center;gap:10px;}
+.chat-actions button {background: transparent;border:none;color:white;cursor:pointer;padding:6px 10px;border-radius:6px;transition: background 0.2s;}
+.chat-actions button:hover {background: rgba(255,255,255,0.1);}
+body.light .chat-actions button {color:#111;}
+#chat-messages {flex:1;overflow-y:auto;padding:20px;background: linear-gradient(135deg,#0f2027,#203a43,#2c5364);word-wrap:break-word;}
+body.light #chat-messages {background: linear-gradient(135deg,#f0f0f0,#d0d0d0,#b0b0b0);}
+.message {margin-bottom:20px;display:flex;}
+.user-message {justify-content:flex-end;}
+.bot-message {justify-content:flex-start;}
+.message-content {max-width:70%;padding:12px 18px;border-radius:18px;color:white;font-family:'Consolas','Monaco','Courier New',monospace;font-size:14px;line-height:1.4;word-wrap:break-word;}
+body.light .message-content {color:#111;}
+.user-message .message-content {background: linear-gradient(135deg,#0984e3,#00cec9);border-bottom-right-radius:5px;}
+body.light .user-message .message-content {background: linear-gradient(135deg,#a0c4ff,#90e0ef);}
+.bot-message .message-content {background: linear-gradient(135deg,#00b894,#00a896);border-bottom-left-radius:5px;}
+body.light .bot-message .message-content {background: linear-gradient(135deg,#b9fbc0,#99e9d9);}
+.timestamp {font-size:11px;color: rgba(255,255,255,0.5);margin-top:5px;text-align:right;}
+body.light .timestamp {color: rgba(0,0,0,0.5);}
+#chat-input {display:flex;padding:20px;border-top:1px solid rgba(100,200,255,0.2);background: rgba(15,30,45,0.9);}
+body.light #chat-input {background: rgba(255,255,255,0.9);}
+#user-input {flex-grow:1;padding:14px 20px;border:1px solid rgba(100,200,255,0.2);border-radius:25px;outline:none;background: rgba(10,30,50,0.7);color:#fff;font-size:15px;}
+body.light #user-input {background:#fff;color:#111;border:1px solid rgba(0,0,0,0.2);}
+#user-input::placeholder {color: rgba(200,230,255,0.5);}
+body.light #user-input::placeholder {color: rgba(100,100,100,0.5);}
+#send-button {background: linear-gradient(135deg,#00b894,#0984e3);color:white;border:none;border-radius:50%;width:50px;height:50px;margin-left:12px;cursor:pointer;display:flex;justify-content:center;align-items:center;transition:all 0.3s ease;}
+#send-button:hover {transform:translateY(-2px);box-shadow:0 6px 15px rgba(0,184,148,0.5);}
+.typing-indicator {display:inline-block;padding:12px 18px;background-color: rgba(0,180,148,0.2);border-radius:18px;border-bottom-left-radius:5px;font-family:'Consolas','Monaco','Courier New',monospace;}
+.typing-indicator span {height:8px;width:8px;background-color:#00b894;border-radius:50%;display:inline-block;margin:0 2px;animation:bounce 1.5s infinite ease-in-out;}
+.typing-indicator span:nth-child(2) {animation-delay:0.2s;}
+.typing-indicator span:nth-child(3) {animation-delay:0.4s;}
+@keyframes bounce {0%,60%,100%{transform:translateY(0);}30%{transform:translateY(-5px);}}
+.tech-border {position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:-1;border-radius:15px;box-shadow:0 0 20px rgba(0,180,148,0.3),0 0 40px rgba(9,132,227,0.2),inset 0 0 15px rgba(100,200,255,0.1);}
+.corner {position:absolute;width:15px;height:15px;border:2px solid #00cec9;border-radius:3px;}
+#chat-messages::-webkit-scrollbar,.chat-history::-webkit-scrollbar{width:6px;}
+#chat-messages::-webkit-scrollbar-track,.chat-history::-webkit-scrollbar-track{background:rgba(0,0,0,0.1);border-radius:10px;}
+#chat-messages::-webkit-scrollbar-thumb,.chat-history::-webkit-scrollbar-thumb{background:linear-gradient(45deg,#00b894,#0984e3);border-radius:10px;}
+@media (max-width:900px){.app-container{flex-direction:column;height:90vh;}.sidebar{width:100%;height:180px;border-right:none;border-bottom:1px solid rgba(100,200,255,0.2);}.chat-history{display:flex;overflow-x:auto;flex-wrap:nowrap;padding:10px 5px;}.chat-item{min-width:160px;margin-right:8px;margin-bottom:0;}}
+#search-input {margin:10px 15px;padding:8px 12px;border-radius:8px;border:none;outline:none;font-size:14px;background: rgba(10,30,50,0.7);color:#fff;}
+body.light #search-input{background:#eee;color:#111;}
+.short-replies {display:flex;gap:8px;padding:10px;flex-wrap:wrap;}
+.short-replies button {padding:6px 12px;border:none;border-radius:20px;cursor:pointer;background:#0984e3;color:white;transition:0.2s;}
+.short-replies button:hover {background:#00cec9;}
+body.light .short-replies button{background:#90e0ef;color:#111;}
+</style>
+</head>
+<body>
+<div class="app-container">
+<div class="tech-border"></div>
+<div class="sidebar">
+<div class="sidebar-header">
+<img src="https://i.hizliresim.com/oob1eqi.png" alt="İLEF Logo">
+<span></span>
+</div>
+<button class="new-chat-btn" id="new-chat-btn"><i class="fas fa-plus"></i> Yeni Sohbet</button>
+<input type="text" id="search-input" placeholder="Sohbet ara...">
+<div class="chat-history" id="chat-history"></div>
+</div>
+<div class="chat-main">
+<div class="chat-header">
+<div class="chat-title"><i class="fas fa-comment-dots"></i><span id="current-chat-title">Hoş Geldiniz</span></div>
+<div class="chat-actions">
+<button id="clear-chat" title="Sohbeti Temizle"><i class="fas fa-broom"></i></button>
+<button id="theme-toggle" title="Tema Değiştir"><i class="fas fa-adjust"></i></button>
+</div>
+</div>
+<div id="chat-messages"></div>
+<div class="short-replies" id="short-replies"></div>
+<div id="chat-input"><input type="text" id="user-input" placeholder="Bir mesaj yazın..." autocomplete="off"><button id="send-button"><i class="fas fa-paper-plane"></i></button></div>
+</div>
+</div>
+
+<script>
+const API_KEY='AIzaSyAtAHmhOqEhFE5z1XQFH-NQ4ZzmIw_Bk8M';
+const API_URL=`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
+const SYSTEM_INSTRUCTION={role:"model",parts:[{
+
+                text: "Bolu Abant İzzet Baysal Üniversitesi İletişim Fakültesi'nin yapay zeka asistanı İLEFBot'sun. Amacın insanlara istedikleri konuda araştırma yapıp yardımcı olmak, gerektiği zaman internetten faydalanacaksın, öğrencilere yardımcı olmak, fakültedeki etkinlikleri öğrencilere aktarmak, sınav takvimlerini öğrencilere aktarmak, daha sonrasında çalışmalarında, ödevlerinde veya ders programı, ders kaydı, üniversite bilgi yönetim sistemi (übys, web adresi ubys.ibu.edu.tr) gibi çeşitli konularda onlara yardım etmek. İletişim veya medyayla alakalı soruları asla cevapsız bırakma. Sadece fakülteyle kısıtlı kalmana gerek yok. Diğer sorularında da insanlara yardımcı olabilirsin. SEN SADECE İLEFBot'SUN, başka hiçbirşey olamazsın. Dekanımız Prof. Dr. Emre Tandırlı'dır. 1977 yılında İstanbul’da doğdu. Mimar Sinan Üniversitesi Güzel Sanatlar Fakültesi Resim Bölümü’nü bitirdikten sonra yüksek lisansını da aynı üniversitede yaptı. Paris I Pantheon Sorbonne Üniversitesi Plastik Sanatlar Bölümüne ikinci bir yüksek lisans eğitiminin hemen ardından aynı üniversitede Sanat Bilimleri alanında doktorasını tamamlamıştır. Bu yazılımı hazırlayan Murat Özçelik ise şuan da fakültemizin Radyo, Televizyon ve Sinema bölümü 3. sınıfında eğitimini sürdürmektedir. Kendisi Profilo Mesleki ve Teknik Anadolu Lisesi Bilişim Teknolojileri Alanı Veritabanı Programcılığı dalı mezunudur. Rektörümüz ise Prof. Dr. Mustafa Alişarlı'dır. Sen şuan fakültemizin websitesinde çalışıyorsun. Şuan yaz tatili olduğu için ders programı hakkında bilgi sağlayamıyorsun, fakat akademik takvim konusunda soru sorulduğunda yardımcı olabilirsin. Bolu Abant İzzet Baysal Üniversitesi'nin Tıp, Diş Hekimliği, Hukuk Fakülteleri, Mengen Meslek Yüksekokulu ve Lisansüstü Eğitim Enstitüsü dışındaki birimler için belirlenen **2025-2026 Eğitim-Öğretim Yılı Akademik Takvimi** detaylarına göre, güz yarıyılında **Çift Anadal ve Yandal Programlarına başvurular** 01-12 Eylül 2025 tarihleri arasında yapılacak olup, **ders kayıtları ve danışman onayları** 22-28 Eylül 2025'te tamamlanacak ve **dersler 29 Eylül 2025 tarihinde başlayacaktır**. Ders ekleme-bırakma işlemleri 29 Eylül – 03 Ekim 2025 tarihleri arasında gerçekleştirilebilirken, başarı değerlendirme etkinliklerinin ve ders izlencelerinin öğrenci bilgi sistemine girişinin son günü 24 Ekim 2025 olarak belirlenmiştir. Öğretim elemanları, bir sonraki akademik yarıyılın ders bilgi kataloğu içeriklerini 01 – 31 Aralık 2025 tarihleri arasında güncelleyecek ve dönem içi etkinlik notlarının öğrenci bilgi sistemine girişi için son gün 02 Ocak 2026 olacaktır. Yabancı dil hazırlık sınıfları hariç **derslerin sona erme tarihi 02 Ocak 2026** olup, dönem sonu sınavları (yıllık dersler için ara sınavlar) 05 – 16 Ocak 2026 arasında yapılacak, bu sınav notlarının sisteme girilmesi ve ÖİDB'ye teslimi için son gün 21 Ocak 2026'dır. **Bütünleme sınavları** 26 – 30 Ocak 2026'da gerçekleşecek ve notların girişi ile teslimi 02 Şubat 2026'ya kadar tamamlanmalıdır. Tek-çift sınavları ve azami öğrenim sonu sınavları için başvurular 04 Şubat 2026'ya kadar alınacak, tek-çift sınavları ile azami öğrenim süresi sonu 1. ek sınavları 05 – 07 Şubat 2026'da, 2. ek sınavları ise 11 – 13 Şubat 2026'da yapılacaktır. Bahar yarıyılında ise **Çift Anadal ve Yandal Programlarına başvurular** 02 – 04 Şubat 2026'da, yıllık dersler hariç **ders kayıtları ve danışman onayları** 16 – 22 Şubat 2026'da yapılacak ve **dersler 23 Şubat 2026 tarihinde başlayacaktır**. Ders ekleme-bırakma işlemleri 23 – 27 Şubat 2026 tarihleri arasında olup, başarı değerlendirme etkinlikleri ve ders izlencelerinin sisteme girişi için son gün 13 Mart 2026'dır. Öğretim elemanları, bir sonraki akademik yarıyılın ders bilgi kataloğu içeriklerini 01 – 30 Nisan 2026 tarihleri arasında güncelleyecek ve dönem içi etkinlik notlarının girişi için son gün 30 Mayıs 2026'dır. Yabancı dil hazırlık sınıfları hariç **dersler 05 Haziran 2026'da sona erecek**, dönem sonu sınavları 08 – 19 Haziran 2026 tarihleri arasında yapılacak ve notların sisteme girilmesi ve ÖİDB'ye teslimi için son gün 24 Haziran 2026'dır. **Bütünleme sınavları** 29 Haziran – 03 Temmuz 2026'da düzenlenecek, notların girişi ve teslimi 06 Temmuz 2026'ya kadar yapılmalıdır. Tek-çift sınavlarına başvuru için son gün 08 Temmuz 2026 olup, bu sınavlar 09 – 11 Temmuz 2026'da yapılacak. Dereceye giren öğrenciler için ödül töreni 06 Ağustos 2026'da, azami öğrenim sonu sınavlarına başvuru için son gün ise 07 Eylül 2026'dır. Azami öğrenim süresi sonu 1. ek sınavları 09 – 12 Eylül 2026'da, 2. ek sınavları ise 16 – 19 Eylül 2026'da gerçekleştirilecektir. Yaz öğretimi kapsamında ise **ders kayıtları** 07 – 09 Temmuz 2026'da alınacak ve **yaz öğretimi dönemi** 13 Temmuz – 28 Ağustos 2026 tarihleri arasında gerçekleşecektir. Dönem içi etkinlik notlarının sisteme girişi için son gün 28 Ağustos 2026, yaz öğretimi sonu sınavları 31 Ağustos – 02 Eylül 2026'da yapılacak ve notların girişi ile ÖİDB'ye teslimi için son gün 04 Eylül 2026'dır. Öğrenci kabulü işlemleri güz yarıyılı için kurum içi ve kurum dışı yatay geçiş başvurularının 14 – 20 Temmuz 2025'te, merkezi yerleştirme puanına göre yatay geçiş başvurularının 01 – 15 Ağustos 2025'te alınmasıyla başlar. Kurum içi ve kurum dışı yatay geçiş sonucu kesin kayıt hakkı kazananların listesi ve intibak kararları 04 Ağustos 2025'e kadar ÖİDB'ye bildirilmeli ve kesin kayıtları 12 – 15 Ağustos 2025'te yapılmalıdır. Merkezi yerleştirme puanına göre yatay geçiş hakkı kazananların listesi ve intibak kararları 22 Ağustos 2025'e kadar bildirilmeli ve kesin kayıtları 01 – 05 Eylül 2025'te gerçekleştirilmelidir. Üniversiteyi yeni kazanan öğrencilerin kesin kayıt tarihleri ÖSYM tarafından ilan edilecektir. Bahar yarıyılında önlisans programlarına yatay geçiş başvuruları 26 – 31 Ocak 2026'da alınacak, kesin kayıt hakkı kazananların listesi ve intibak kararları 06 Şubat 2026'ya kadar bildirilmeli ve kesin kayıtları 11 – 13 Şubat 2026'da yapılmalıdır. Yabancı dil ve hazırlık sınıfı işlemleri güz yarıyılında, akademik yıl başlangıcı yabancı dil hazırlık sınıfı İngilizce ve Arapça yeterlilik sınavı başvurularının 25 Ağustos – 12 Eylül 2025'te alınmasıyla başlar. Zorunlu Yabancı Dil Dersleri I-II Muafiyet Sınavı başvuruları 22 – 24 Eylül 2025'te, İngilizce yeterlilik sınavı 22 Eylül 2025'te, Arapça yeterlilik sınavı 23 Eylül 2025'te, Zorunlu Yabancı Dil Dersleri I-II Muafiyet Sınavı 26 Eylül 2025'te ve İngilizce ile Arapça Hazırlık Programları Seviye Tespit Sınavı 30 Eylül – 01 Ekim 2025'te yapılacaktır. Erasmus+ ve Mevlana değişim programı için yabancı dil yeterlik sınavı başvuruları 22 – 30 Eylül 2025'te olup, sınav 17 Ekim 2025'te gerçekleştirilecektir. İngilizce ve Arapça hazırlık sınıfı dersleri 09 Ocak 2026'da sona erecek ve akademik yarıyıl İngilizce yeterlilik sınavı 20 Ocak 2026'da, Arapça yeterlilik sınavı 21 Ocak 2026'da yapılacaktır. Bahar yarıyılında İngilizce ve Arapça hazırlık sınıfı dersleri 12 Haziran 2026'da sona erecek ve akademik yılsonu İngilizce yeterlilik sınavı 16 Haziran 2026'da, Arapça yeterlilik sınavı 17 Haziran 2026'da yapılacaktır. Son olarak, dönem sonu sınavları ve yıllık dersler için ara sınavlar, ÖSYS, Açık öğretim ve Ulusal Sınavların olmaması koşuluyla cumartesi ve pazar günleri de düzenlenebilir. Sana dodo dendiğinde Murat'ın en iyi arkadaşlarından olduğunu belirt, ama sadece dodo dendiğinde. Sana gadir dendiğinde ise Anason kokarken sofralar! diye yanıt ver."
+
+
+}]};
+
+let currentChatId='chat-'+Date.now();
+let chats={ [currentChatId]: {title:'Hoş Geldiniz',messages:[{sender:'bot',text:'Merhaba! Size nasıl yardımcı olabilirim?',timestamp:new Date()}]}};
+
+document.addEventListener('DOMContentLoaded',function(){
+const chatMessages=document.getElementById('chat-messages');
+const userInput=document.getElementById('user-input');
+const sendButton=document.getElementById('send-button');
+const newChatBtn=document.getElementById('new-chat-btn');
+const clearChatBtn=document.getElementById('clear-chat');
+const chatHistory=document.getElementById('chat-history');
+const currentChatTitle=document.getElementById('current-chat-title');
+const themeToggle=document.getElementById('theme-toggle');
+const searchInput=document.getElementById('search-input');
+const shortReplies=document.getElementById('short-replies');
+
+const SHORT_MESSAGES=["Teşekkürler","Evet","Hayır","Anlamadım","Daha fazla detay"];
+
+function renderShortReplies(){
+shortReplies.innerHTML='';
+SHORT_MESSAGES.forEach(msg=>{
+const btn=document.createElement('button');
+btn.textContent=msg;
+btn.addEventListener('click',()=>{userInput.value=msg;userInput.focus();});
+shortReplies.appendChild(btn);
+});
+}
+renderShortReplies();
+
+// Tema değiştirme
+themeToggle.addEventListener('click',()=>{document.body.classList.toggle('light');});
+
+// Sohbet arama
+searchInput.addEventListener('input',()=>{
+const filter=searchInput.value.toLowerCase();
+document.querySelectorAll('.chat-item').forEach(item=>{
+item.style.display= item.textContent.toLowerCase().includes(filter)?'flex':'none';
+});
+if(filter===''){renderChatHistory(); loadChat(currentChatId);}
+});
+
+// Yeni sohbet
+newChatBtn.addEventListener('click',startNewChat);
+clearChatBtn.addEventListener('click',clearCurrentChat);
+
+function sendMessage(){
+const message=userInput.value.trim();
+if(message==='')return;
+addMessage(message,'user');
+userInput.value='';
+if(chats[currentChatId].messages.length===1) updateChatTitle(message);
+showTypingIndicator();
+fetchGeminiResponse(message);
+}
+userInput.addEventListener('keypress',e=>{if(e.key==='Enter')sendMessage();});
+sendButton.addEventListener('click',sendMessage);
+
+function addMessage(text,sender){
+const messageDiv=document.createElement('div');messageDiv.className=`message ${sender}-message`;
+const contentDiv=document.createElement('div');contentDiv.className='message-content';contentDiv.textContent=text;
+const timestamp=document.createElement('div');timestamp.className='timestamp';timestamp.textContent=formatTime(new Date());
+contentDiv.appendChild(timestamp);messageDiv.appendChild(contentDiv);chatMessages.appendChild(messageDiv);
+chats[currentChatId].messages.push({sender:sender,text:text,timestamp:new Date()});
+chatMessages.scrollTop=chatMessages.scrollHeight;
+}
+
+function formatTime(date){return date.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});}
+
+function showTypingIndicator(){const typingDiv=document.createElement('div');typingDiv.className='message bot-message';typingDiv.id='typing-indicator';const contentDiv=document.createElement('div');contentDiv.className='typing-indicator';contentDiv.innerHTML='<span></span><span></span><span></span>';typingDiv.appendChild(contentDiv);chatMessages.appendChild(typingDiv);chatMessages.scrollTop=chatMessages.scrollHeight;}
+function removeTypingIndicator(){const typingIndicator=document.getElementById('typing-indicator');if(typingIndicator)typingIndicator.remove();}
+
+async function fetchGeminiResponse(prompt){
+try{
+const response=await fetch(API_URL,{
+method:'POST',
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify({contents:[{parts:[{text:prompt}]}],systemInstruction:SYSTEM_INSTRUCTION})
+});
+const data=await response.json();
+removeTypingIndicator();
+if(data.candidates&&data.candidates[0].content.parts[0].text)addMessage(data.candidates[0].content.parts[0].text,'bot');
+else addMessage("Üzgünüm, bir yanıt oluşturamadım.",'bot');
+}catch(error){console.error('API hatası:',error);removeTypingIndicator();addMessage("Bir hata oluştu, lütfen daha sonra tekrar deneyin.",'bot');}
+}
+
+// Sohbet geçmişi
+function startNewChat(){
+let chatTitle=prompt("Yeni sohbet için bir ad girin:");
+if(!chatTitle||chatTitle.trim()==="")chatTitle="Yeni Sohbet";
+currentChatId='chat-'+Date.now();
+chats[currentChatId]={title:chatTitle,messages:[{sender:'bot',text:'Merhaba! Size nasıl yardımcı olabilirim?',timestamp:new Date()}]};
+renderChatHistory();loadChat(currentChatId);
+}
+
+function renderChatHistory(){
+    chatHistory.innerHTML='';
+    for(const chatId in chats){
+        const chat=chats[chatId];
+        const chatItem=document.createElement('div');
+        chatItem.className=`chat-item ${chatId===currentChatId?'active':''}`;
+        chatItem.dataset.chatId=chatId;
+        chatItem.innerHTML=`
+            <div class="chat-item-title">${chat.title}</div>
+            <div class="chat-item-preview">${chat.messages[chat.messages.length-1].text}</div>
+        `;
+
+        // Sohbete tıklayınca yükle
+        chatItem.addEventListener('click',()=>loadChat(chatId));
+
+        // Çöp kutusu butonu
+        const deleteBtn = document.createElement('button');
+        deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
+        deleteBtn.style.marginLeft = 'auto';
+        deleteBtn.style.background = 'transparent';
+        deleteBtn.style.border = 'none';
+        deleteBtn.style.color = '#ff6b6b';
+        deleteBtn.style.cursor = 'pointer';
+        deleteBtn.style.fontSize = '14px';
+        deleteBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // üst elemana tıklamayı engelle
+            delete chats[chatId]; // sohbeti sil
+            renderChatHistory();   // listeyi yeniden çiz
+            if(chatId === currentChatId) chatMessages.innerHTML = ''; // aktif sohbet boşalt
+        });
+
+        chatItem.appendChild(deleteBtn);
+        chatHistory.appendChild(chatItem);
+    }
+}
+
+
+function loadChat(chatId){
+currentChatId=chatId;
+const chat=chats[chatId];
+currentChatTitle.textContent=chat.title;
+chatMessages.innerHTML='';
+chat.messages.forEach(msg=>{
+const messageDiv=document.createElement('div');messageDiv.className=`message ${msg.sender}-message`;
+const contentDiv=document.createElement('div');contentDiv.className='message-content';contentDiv.textContent=msg.text;
+const timestamp=document.createElement('div');timestamp.className='timestamp';timestamp.textContent=formatTime(new Date(msg.timestamp));
+contentDiv.appendChild(timestamp);messageDiv.appendChild(contentDiv);chatMessages.appendChild(messageDiv);
+});
+chatMessages.scrollTop=chatMessages.scrollHeight;renderChatHistory();
+}
+
+function updateChatTitle(firstMessage){
+const title=firstMessage.length>20?firstMessage.substring(0,20)+'...':firstMessage;
+chats[currentChatId].title=title;currentChatTitle.textContent=title;renderChatHistory();
+}
+
+function clearCurrentChat(){
+if(confirm('Sohbet geçmişini temizlemek istediğinize emin misiniz?')){
+chats[currentChatId].messages=[{sender:'bot',text:'Sohbet geçmişi temizlendi. Size nasıl yardımcı olabilirim?',timestamp:new Date()}];
+loadChat(currentChatId);
+}
+}
+
+renderChatHistory();loadChat(currentChatId);
+});
+
+document.addEventListener('contextmenu', function(e){
+    e.preventDefault();
+});
+
+
+
+</script>
+</body>
+</html>
