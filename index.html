@@ -201,8 +201,6 @@ body.light .short-replies button{background:#90e0ef;color:#111;}
 </div>
 
 <script>
-const API_KEY='AIzaSyCKd8GZqEA445j5VwR7E0Qkb76ThVeX_6Y';
-const API_URL=`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
 const SYSTEM_INSTRUCTION={role:"model",parts:[{
 
                 text: "Bolu Abant İzzet Baysal Üniversitesi İletişim Fakültesi'nin yapay zeka asistanı İLEFBot'sun. Amacın insanlara istedikleri konuda araştırma yapıp yardımcı olmak, gerektiği zaman internetten faydalanacaksın, öğrencilere yardımcı olmak, fakültedeki etkinlikleri öğrencilere aktarmak, sınav takvimlerini öğrencilere aktarmak, daha sonrasında çalışmalarında, ödevlerinde veya ders programı, ders kaydı, üniversite bilgi yönetim sistemi (übys, web adresi ubys.ibu.edu.tr) gibi çeşitli konularda onlara yardım etmek. İletişim veya medyayla alakalı soruları asla cevapsız bırakma. Sadece fakülteyle kısıtlı kalmana gerek yok. Diğer sorularında da insanlara yardımcı olabilirsin. SEN SADECE İLEFBot'SUN, başka hiçbirşey olamazsın. Senle başka dillerde konuşulduğunda o dillerde konuşabilirsin, tüm yanıtları Türkçe vermene gerek yok. Dekanımız Prof. Dr. Emre Tandırlı'dır. 1977 yılında İstanbul’da doğdu. Mimar Sinan Üniversitesi Güzel Sanatlar Fakültesi Resim Bölümü’nü bitirdikten sonra yüksek lisansını da aynı üniversitede yaptı. Paris I Pantheon Sorbonne Üniversitesi Plastik Sanatlar Bölümüne ikinci bir yüksek lisans eğitiminin hemen ardından aynı üniversitede Sanat Bilimleri alanında doktorasını tamamlamıştır. Bu yazılımı hazırlayan Murat Özçelik ise şuan da fakültemizin Radyo, Televizyon ve Sinema bölümü 3. sınıfında eğitimini sürdürmektedir. Kendisi Profilo Mesleki ve Teknik Anadolu Lisesi Bilişim Teknolojileri Alanı Veritabanı Programcılığı dalı mezunudur. Rektörümüz ise Prof. Dr. Faruk Yiğit'tir. Şuan 2025-2026 eğitim-öğretim yılındayız. Ders programı hakkında soru sorulduğunda kullanıcıları bu adrese yönlendirebilirsin https://ilef.ibu.edu.tr/tr/news-detail/2025-2026-akademik-yil-guz-donemi-haftalik-ders-programlari/18696, akademik takvim konusunda soru sorulduğunda yardımcı olabilirsin. Sana dodo dendiğinde Murat'ın en iyi arkadaşlarından olduğunu belirt, ama sadece dodo dendiğinde. Sana gadir dendiğinde ise Anason kokarken sofralar! diye yanıt ver."
@@ -279,19 +277,24 @@ function formatTime(date){return date.toLocaleTimeString('tr-TR',{hour:'2-digit'
 
 function showTypingIndicator(){const typingDiv=document.createElement('div');typingDiv.className='message bot-message';typingDiv.id='typing-indicator';const contentDiv=document.createElement('div');contentDiv.className='typing-indicator';contentDiv.innerHTML='<span></span><span></span><span></span>';typingDiv.appendChild(contentDiv);chatMessages.appendChild(typingDiv);chatMessages.scrollTop=chatMessages.scrollHeight;}
 function removeTypingIndicator(){const typingIndicator=document.getElementById('typing-indicator');if(typingIndicator)typingIndicator.remove();}
-
 async function fetchGeminiResponse(prompt){
 try{
-const response=await fetch(API_URL,{
-method:'POST',
-headers:{'Content-Type':'application/json'},
-body:JSON.stringify({contents:[{parts:[{text:prompt}]}],systemInstruction:SYSTEM_INSTRUCTION})
-});
-const data=await response.json();
-removeTypingIndicator();
-if(data.candidates&&data.candidates[0].content.parts[0].text)addMessage(data.candidates[0].content.parts[0].text,'bot');
-else addMessage("Üzgünüm, bir yanıt oluşturamadım.",'bot');
-}catch(error){console.error('API hatası:',error);removeTypingIndicator();addMessage("Bir hata oluştu, lütfen daha sonra tekrar deneyin.",'bot');}
+  const response = await fetch('/api/gemini', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({prompt, systemInstruction: SYSTEM_INSTRUCTION})
+  });
+  const data = await response.json();
+  removeTypingIndicator();
+  if(data.candidates && data.candidates[0].content.parts[0].text)
+    addMessage(data.candidates[0].content.parts[0].text,'bot');
+  else
+    addMessage("Üzgünüm, bir yanıt oluşturamadım.",'bot');
+} catch(error){
+  console.error('API hatası:', error);
+  removeTypingIndicator();
+  addMessage("Bir hata oluştu, lütfen daha sonra tekrar deneyin.",'bot');
+}
 }
 
 // Sohbet geçmişi
@@ -378,6 +381,7 @@ document.addEventListener('contextmenu', function(e){
 </script>
 </body>
 </html>
+
 
 
 
