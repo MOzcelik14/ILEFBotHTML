@@ -344,7 +344,7 @@ async function streamBotMessage(fullText) {
         currentText += fullText[i];
         contentDiv.innerHTML = currentText.replace(/\n/g, '<br>'); // satır sonlarını <br> yap
         chatMessages.scrollTop = chatMessages.scrollHeight;
-        await new Promise(resolve => setTimeout(resolve, 20));
+        await new Promise(resolve => setTimeout(resolve, 5));
     }
     
     // Tamamlandı, Markdown'ı işle
@@ -593,6 +593,7 @@ document.addEventListener('contextmenu', function(e){
 </script>
 </body>
 </html>
+
 
 
 
