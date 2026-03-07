@@ -207,8 +207,24 @@ const SYSTEM_INSTRUCTION={role:"model",parts:[{
                 text: "Bolu Abant İzzet Baysal Üniversitesi İletişim Fakültesi'nin yapay zeka asistanı İLEFBot'sun. Amacın insanlara istedikleri konuda araştırma yapıp yardımcı olmak, gerektiği zaman internetten faydalanacaksın, öğrencilere yardımcı olmak, fakültedeki etkinlikleri öğrencilere aktarmak, sınav takvimlerini öğrencilere aktarmak, daha sonrasında çalışmalarında, ödevlerinde veya ders programı, ders kaydı, üniversite bilgi yönetim sistemi (übys, web adresi ubys.ibu.edu.tr) gibi çeşitli konularda onlara yardım etmek. İletişim veya medyayla alakalı soruları asla cevapsız bırakma. Sadece fakülteyle kısıtlı kalmana gerek yok. Diğer sorularında da insanlara yardımcı olabilirsin. SEN SADECE İLEFBot'SUN, başka hiçbirşey olamazsın. Senle başka dillerde konuşulduğunda o dillerde konuşabilirsin, tüm yanıtları Türkçe vermene gerek yok. Dekanımız Prof. Dr. Emre Tandırlı'dır. 1977 yılında İstanbul’da doğdu. Mimar Sinan Üniversitesi Güzel Sanatlar Fakültesi Resim Bölümü’nü bitirdikten sonra yüksek lisansını da aynı üniversitede yaptı. Paris I Pantheon Sorbonne Üniversitesi Plastik Sanatlar Bölümüne ikinci bir yüksek lisans eğitiminin hemen ardından aynı üniversitede Sanat Bilimleri alanında doktorasını tamamlamıştır. Bu yazılımı hazırlayan Murat Özçelik ise şuan da fakültemizin Radyo, Televizyon ve Sinema bölümü 3. sınıfında eğitimini sürdürmektedir. Kendisi Profilo Mesleki ve Teknik Anadolu Lisesi Bilişim Teknolojileri Alanı Veritabanı Programcılığı dalı mezunudur. Rektörümüz ise Prof. Dr. Faruk Yiğit'tir. Şuan 2025-2026 eğitim-öğretim yılındayız. Ders programı hakkında soru sorulduğunda kullanıcıları bu adrese yönlendirebilirsin https://ilef.ibu.edu.tr/tr/news-detail/2025-2026-akademik-yil-bahar-donemi-haftalik-ders-programlari/19751, akademik takvim konusunda soru sorulduğunda yardımcı olabilirsin. Sana dodo dendiğinde Dolunay'ın Murat'ın en iyi arkadaşlarından olduğunu belirt, ama sadece dodo dendiğinde. Sana gadir dendiğinde ise Ölene dek GGAMG! diye yanıt ver. Sana Koray dendiğinde kelleşme için çözümler anlat."
 }]};
 
-let currentChatId='chat-'+Date.now();
-let chats={ [currentChatId]: {title:'Hoş Geldiniz',messages:[{sender:'bot',text:'Merhaba! Size nasıl yardımcı olabilirim?',timestamp:new Date()}]}};
+// LocalStorage'dan sohbetleri yükle
+let savedChats = localStorage.getItem('ilefbot_chats');
+let chats = savedChats ? JSON.parse(savedChats) : {};
+
+// Eğer hiç sohbet yoksa varsayılan bir sohbet oluştur
+let currentChatId;
+if (Object.keys(chats).length === 0) {
+    currentChatId = 'chat-' + Date.now();
+    chats[currentChatId] = {title:'Hoş Geldiniz', messages:[{sender:'bot', text:'Merhaba! Size nasıl yardımcı olabilirim?', timestamp:new Date()}]};
+} else {
+    // En son aktif olan sohbeti bul (son mesajı en yeni olanı seçebiliriz, basitçe ilkini alalım)
+    currentChatId = Object.keys(chats)[0];
+}
+
+// LocalStorage'a kaydet
+function saveChatsToLocalStorage() {
+    localStorage.setItem('ilefbot_chats', JSON.stringify(chats));
+}
 
 document.addEventListener('DOMContentLoaded',function(){
 const chatMessages=document.getElementById('chat-messages');
@@ -221,6 +237,13 @@ const currentChatTitle=document.getElementById('current-chat-title');
 const themeToggle=document.getElementById('theme-toggle');
 const searchInput=document.getElementById('search-input');
 const shortReplies=document.getElementById('short-replies');
+
+// Sohbeti TXT olarak indirme butonu ekle
+const downloadTxtBtn = document.createElement('button');
+downloadTxtBtn.innerHTML = '<i class="fas fa-download"></i>';
+downloadTxtBtn.title = 'Sohbeti TXT olarak indir';
+downloadTxtBtn.addEventListener('click', downloadChatAsTxt);
+document.querySelector('.chat-actions').appendChild(downloadTxtBtn);
 
 const SHORT_MESSAGES=["Teşekkürler","Evet","Hayır","Anlamadım","Daha fazla detay"];
 
@@ -263,6 +286,7 @@ fetchGeminiResponse(message);
 userInput.addEventListener('keypress',e=>{if(e.key==='Enter')sendMessage();});
 sendButton.addEventListener('click',sendMessage);
 
+// Kullanıcı mesajı ekleme (anında)
 function addMessage(text, sender) {
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${sender}-message`;
@@ -270,7 +294,6 @@ function addMessage(text, sender) {
     const contentDiv = document.createElement('div');
     contentDiv.className = 'message-content';
     
-    // Eğer mesaj bot'tan geliyorsa Markdown'ı işle
     if (sender === 'bot') {
         contentDiv.innerHTML = marked.parse(text);
     } else {
@@ -286,32 +309,166 @@ function addMessage(text, sender) {
     chatMessages.appendChild(messageDiv);
     
     chats[currentChatId].messages.push({ sender: sender, text: text, timestamp: new Date() });
+    saveChatsToLocalStorage();
+    
     chatMessages.scrollTop = chatMessages.scrollHeight;
+    
+    // Kullanıcı mesajı eklendiyse regenerate butonunu güncelle
+    if (sender === 'user') {
+        addRegenerateButton();
+    }
+}
+
+// Streaming ile bot mesajı ekleme
+async function streamBotMessage(fullText) {
+    removeTypingIndicator();
+    
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'message bot-message';
+    
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'message-content';
+    contentDiv.style.position = 'relative'; // copy butonu için
+    
+    // Timestamp (önce boş ekleyip sonra dolduracağız)
+    const timestamp = document.createElement('div');
+    timestamp.className = 'timestamp';
+    timestamp.textContent = formatTime(new Date());
+    
+    messageDiv.appendChild(contentDiv);
+    chatMessages.appendChild(messageDiv);
+    
+    // Karakter karakter yazma
+    let currentText = '';
+    for (let i = 0; i < fullText.length; i++) {
+        currentText += fullText[i];
+        contentDiv.innerHTML = currentText.replace(/\n/g, '<br>'); // satır sonlarını <br> yap
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        await new Promise(resolve => setTimeout(resolve, 20));
+    }
+    
+    // Tamamlandı, Markdown'ı işle
+    contentDiv.innerHTML = marked.parse(fullText);
+    contentDiv.appendChild(timestamp);
+    
+    // Copy butonunu ekle
+    addCopyButton(contentDiv, fullText);
+    
+    chats[currentChatId].messages.push({ sender: 'bot', text: fullText, timestamp: new Date() });
+    saveChatsToLocalStorage();
+    
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+// Copy butonu ekleme (mesaj balonunun içinde sağ üstte)
+function addCopyButton(container, messageText) {
+    const copyBtn = document.createElement('button');
+    copyBtn.innerHTML = '📋';
+    copyBtn.title = 'Mesajı kopyala';
+    copyBtn.style.position = 'absolute';
+    copyBtn.style.top = '5px';
+    copyBtn.style.right = '5px';
+    copyBtn.style.background = 'transparent';
+    copyBtn.style.border = 'none';
+    copyBtn.style.cursor = 'pointer';
+    copyBtn.style.fontSize = '16px';
+    copyBtn.style.opacity = '0.6';
+    copyBtn.style.transition = 'opacity 0.2s';
+    copyBtn.style.zIndex = '5';
+    copyBtn.addEventListener('mouseenter', () => copyBtn.style.opacity = '1');
+    copyBtn.addEventListener('mouseleave', () => copyBtn.style.opacity = '0.6');
+    copyBtn.addEventListener('click', () => {
+        navigator.clipboard.writeText(messageText).then(() => {
+            copyBtn.textContent = '✅';
+            setTimeout(() => copyBtn.innerHTML = '📋', 2000);
+        });
+    });
+    
+    container.appendChild(copyBtn);
+}
+
+// Regenerate butonu ekleme (son mesajın altında, ortalanmış)
+function addRegenerateButton() {
+    // Önce varsa eski butonu kaldır
+    const oldBtn = document.getElementById('regenerate-btn');
+    if (oldBtn) oldBtn.remove();
+    
+    const messages = chats[currentChatId].messages;
+    if (messages.length < 2) return; // En az bir kullanıcı ve bot mesajı olmalı
+    
+    // Son mesaj kullanıcı mı kontrol et (regenerate mantığı için)
+    const lastMsg = messages[messages.length - 1];
+    if (lastMsg.sender !== 'user') return;
+    
+    // Butonu oluştur
+    const btn = document.createElement('button');
+    btn.id = 'regenerate-btn';
+    btn.innerHTML = '<i class="fas fa-sync-alt"></i> Yanıtı Yeniden Oluştur';
+    btn.style.display = 'block';
+    btn.style.margin = '10px auto';
+    btn.style.padding = '8px 16px';
+    btn.style.background = 'linear-gradient(135deg,#00b894,#0984e3)';
+    btn.style.color = 'white';
+    btn.style.border = 'none';
+    btn.style.borderRadius = '20px';
+    btn.style.cursor = 'pointer';
+    btn.style.fontSize = '14px';
+    btn.style.transition = 'all 0.3s';
+    btn.style.zIndex = '10';
+    btn.addEventListener('mouseenter', () => btn.style.transform = 'scale(1.05)');
+    btn.addEventListener('mouseleave', () => btn.style.transform = 'scale(1)');
+    btn.addEventListener('click', () => {
+        // Son bot mesajını kaldır (varsa)
+        if (messages[messages.length - 1].sender === 'bot') {
+            messages.pop(); // chats'ten sil
+            chatMessages.removeChild(chatMessages.lastChild); // DOM'dan kaldır
+        }
+        // Tekrar istek at (son kullanıcı mesajı ile)
+        const lastUserMsg = messages[messages.length - 1].text; // hala user
+        showTypingIndicator();
+        fetchGeminiResponse(lastUserMsg, true);
+    });
+    
+    // Butonu son mesajın hemen altına ekle
+    chatMessages.appendChild(btn);
+}
+
+async function fetchGeminiResponse(prompt, isRegenerate = false) {
+    try {
+        const response = await fetch('/api/gemini', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({prompt, systemInstruction: SYSTEM_INSTRUCTION})
+        });
+        const data = await response.json();
+        removeTypingIndicator();
+        
+        let botReply = '';
+        if (data.candidates && data.candidates[0].content.parts[0].text) {
+            botReply = data.candidates[0].content.parts[0].text;
+        } else {
+            botReply = "Üzgünüm, bir yanıt oluşturamadım.";
+        }
+        
+        if (isRegenerate) {
+            // Regenerate butonunu kaldır (yenisi sonra eklenecek)
+            const oldBtn = document.getElementById('regenerate-btn');
+            if (oldBtn) oldBtn.remove();
+        }
+        
+        await streamBotMessage(botReply);
+        
+    } catch (error) {
+        console.error('API hatası:', error);
+        removeTypingIndicator();
+        addMessage("Bir hata oluştu, lütfen daha sonra tekrar deneyin.", 'bot');
+    }
 }
 
 function formatTime(date){return date.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});}
 
 function showTypingIndicator(){const typingDiv=document.createElement('div');typingDiv.className='message bot-message';typingDiv.id='typing-indicator';const contentDiv=document.createElement('div');contentDiv.className='typing-indicator';contentDiv.innerHTML='<span></span><span></span><span></span>';typingDiv.appendChild(contentDiv);chatMessages.appendChild(typingDiv);chatMessages.scrollTop=chatMessages.scrollHeight;}
 function removeTypingIndicator(){const typingIndicator=document.getElementById('typing-indicator');if(typingIndicator)typingIndicator.remove();}
-async function fetchGeminiResponse(prompt){
-try{
-  const response = await fetch('/api/gemini', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({prompt, systemInstruction: SYSTEM_INSTRUCTION})
-  });
-  const data = await response.json();
-  removeTypingIndicator();
-  if(data.candidates && data.candidates[0].content.parts[0].text)
-    addMessage(data.candidates[0].content.parts[0].text,'bot');
-  else
-    addMessage("Üzgünüm, bir yanıt oluşturamadım.",'bot');
-} catch(error){
-  console.error('API hatası:', error);
-  removeTypingIndicator();
-  addMessage("Bir hata oluştu, lütfen daha sonra tekrar deneyin.",'bot');
-}
-}
 
 // Sohbet geçmişi
 function startNewChat(){
@@ -319,6 +476,7 @@ let chatTitle=prompt("Yeni sohbet için bir ad girin:");
 if(!chatTitle||chatTitle.trim()==="")chatTitle="Yeni Sohbet";
 currentChatId='chat-'+Date.now();
 chats[currentChatId]={title:chatTitle,messages:[{sender:'bot',text:'Merhaba! Size nasıl yardımcı olabilirim?',timestamp:new Date()}]};
+saveChatsToLocalStorage();
 renderChatHistory();loadChat(currentChatId);
 }
 
@@ -334,10 +492,8 @@ function renderChatHistory(){
             <div class="chat-item-preview">${chat.messages[chat.messages.length-1].text}</div>
         `;
 
-        // Sohbete tıklayınca yükle
         chatItem.addEventListener('click',()=>loadChat(chatId));
 
-        // Çöp kutusu butonu
         const deleteBtn = document.createElement('button');
         deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
         deleteBtn.style.marginLeft = 'auto';
@@ -347,10 +503,18 @@ function renderChatHistory(){
         deleteBtn.style.cursor = 'pointer';
         deleteBtn.style.fontSize = '14px';
         deleteBtn.addEventListener('click', (e) => {
-            e.stopPropagation(); // üst elemana tıklamayı engelle
-            delete chats[chatId]; // sohbeti sil
-            renderChatHistory();   // listeyi yeniden çiz
-            if(chatId === currentChatId) chatMessages.innerHTML = ''; // aktif sohbet boşalt
+            e.stopPropagation();
+            delete chats[chatId];
+            saveChatsToLocalStorage();
+            renderChatHistory();
+            if(chatId === currentChatId) {
+                const remainingChats = Object.keys(chats);
+                if (remainingChats.length > 0) {
+                    loadChat(remainingChats[0]);
+                } else {
+                    startNewChat();
+                }
+            }
         });
 
         chatItem.appendChild(deleteBtn);
@@ -366,25 +530,59 @@ currentChatTitle.textContent=chat.title;
 chatMessages.innerHTML='';
 chat.messages.forEach(msg=>{
 const messageDiv=document.createElement('div');messageDiv.className=`message ${msg.sender}-message`;
-const contentDiv=document.createElement('div');contentDiv.className='message-content';contentDiv.textContent=msg.text;
+const contentDiv=document.createElement('div');contentDiv.className='message-content';
+contentDiv.style.position = 'relative'; // copy butonu için
+
+if (msg.sender === 'bot') {
+    contentDiv.innerHTML = marked.parse(msg.text);
+    // Copy butonu ekle
+    addCopyButton(contentDiv, msg.text);
+} else {
+    contentDiv.textContent = msg.text;
+}
+
 const timestamp=document.createElement('div');timestamp.className='timestamp';timestamp.textContent=formatTime(new Date(msg.timestamp));
 contentDiv.appendChild(timestamp);messageDiv.appendChild(contentDiv);chatMessages.appendChild(messageDiv);
 });
+// Regenerate butonunu kontrol et
+addRegenerateButton();
 chatMessages.scrollTop=chatMessages.scrollHeight;renderChatHistory();
 }
 
 function updateChatTitle(firstMessage){
 const title=firstMessage.length>20?firstMessage.substring(0,20)+'...':firstMessage;
 chats[currentChatId].title=title;currentChatTitle.textContent=title;renderChatHistory();
+saveChatsToLocalStorage();
 }
 
 function clearCurrentChat(){
 if(confirm('Sohbet geçmişini temizlemek istediğinize emin misiniz?')){
 chats[currentChatId].messages=[{sender:'bot',text:'Sohbet geçmişi temizlendi. Size nasıl yardımcı olabilirim?',timestamp:new Date()}];
+saveChatsToLocalStorage();
 loadChat(currentChatId);
 }
 }
 
+// TXT olarak indir
+function downloadChatAsTxt() {
+    const chat = chats[currentChatId];
+    let content = `Sohbet: ${chat.title}\nTarih: ${new Date().toLocaleString()}\n\n`;
+    chat.messages.forEach(msg => {
+        const sender = msg.sender === 'user' ? 'Kullanıcı' : 'İLEFBot';
+        const time = formatTime(new Date(msg.timestamp));
+        content += `[${time}] ${sender}:\n${msg.text}\n\n`;
+    });
+    
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `sohbet_${chat.title}_${Date.now()}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+// LocalStorage'dan yükleme yapıldı, şimdi arayüzü başlat
 renderChatHistory();loadChat(currentChatId);
 });
 
@@ -392,12 +590,9 @@ document.addEventListener('contextmenu', function(e){
     e.preventDefault();
 });
 
-
-
 </script>
 </body>
 </html>
-
 
 
 
