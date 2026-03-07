@@ -8,7 +8,7 @@
 
 Bot, Google Gemini modeli kullanarak öğrencilerin sorularına yanıt vermek, fakülte hakkında bilgi sağlamak ve çeşitli metin tabanlı etkileşimler üretmek amacıyla geliştirilmiştir.
 
-Bu proje, büyük dil modellerinin üniversite toplulukları içinde nasıl kullanılabileceğini denemek amacıyla oluşturulmuştur.
+Bu proje, büyük dil modellerinin üniversite ortamları içinde ve akademik bir zemin üzerinde nasıl kullanılabileceğini denemek amacıyla oluşturulmuştur.
 
 ---
 
