@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
 <link rel="icon" href="https://i.hizliresim.com/ar4mbl6.png" type="image/x-icon" />
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -264,13 +265,30 @@ fetchGeminiResponse(message);
 userInput.addEventListener('keypress',e=>{if(e.key==='Enter')sendMessage();});
 sendButton.addEventListener('click',sendMessage);
 
-function addMessage(text,sender){
-const messageDiv=document.createElement('div');messageDiv.className=`message ${sender}-message`;
-const contentDiv=document.createElement('div');contentDiv.className='message-content';contentDiv.textContent=text;
-const timestamp=document.createElement('div');timestamp.className='timestamp';timestamp.textContent=formatTime(new Date());
-contentDiv.appendChild(timestamp);messageDiv.appendChild(contentDiv);chatMessages.appendChild(messageDiv);
-chats[currentChatId].messages.push({sender:sender,text:text,timestamp:new Date()});
-chatMessages.scrollTop=chatMessages.scrollHeight;
+function addMessage(text, sender) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${sender}-message`;
+    
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'message-content';
+    
+    // Eğer mesaj bot'tan geliyorsa Markdown'ı işle
+    if (sender === 'bot') {
+        contentDiv.innerHTML = marked.parse(text);
+    } else {
+        contentDiv.textContent = text;
+    }
+    
+    const timestamp = document.createElement('div');
+    timestamp.className = 'timestamp';
+    timestamp.textContent = formatTime(new Date());
+    
+    contentDiv.appendChild(timestamp);
+    messageDiv.appendChild(contentDiv);
+    chatMessages.appendChild(messageDiv);
+    
+    chats[currentChatId].messages.push({ sender: sender, text: text, timestamp: new Date() });
+    chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
 function formatTime(date){return date.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});}
@@ -381,6 +399,7 @@ document.addEventListener('contextmenu', function(e){
 </script>
 </body>
 </html>
+
 
 
 
