@@ -433,19 +433,23 @@ function addRegenerateButton() {
     chatMessages.appendChild(btn);
 }
 
+// BURA DEĞİŞTİ: Artık /api/chat'e istek atıyor ve yanıtı "reply" anahtarıyla bekliyor
 async function fetchGeminiResponse(prompt, isRegenerate = false) {
     try {
-        const response = await fetch('/api/gemini', {
+        const response = await fetch('/api/chat', { 
             method: 'POST',
             headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({prompt, systemInstruction: SYSTEM_INSTRUCTION})
+            body: JSON.stringify({
+                prompt: prompt, 
+                systemInstruction: SYSTEM_INSTRUCTION.parts[0].text // BURA DEĞİŞTİ: Sadece metni gönderiyoruz
+            }) 
         });
         const data = await response.json();
         removeTypingIndicator();
         
         let botReply = '';
-        if (data.candidates && data.candidates[0].content.parts[0].text) {
-            botReply = data.candidates[0].content.parts[0].text;
+        if (data.reply) { // BURA DEĞİŞTİ: Qwen/OpenRouter uyumlu hale getirildi
+            botReply = data.reply;
         } else {
             botReply = "Üzgünüm, bir yanıt oluşturamadım.";
         }
@@ -593,22 +597,3 @@ document.addEventListener('contextmenu', function(e){
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
